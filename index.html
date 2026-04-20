@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ATM Monitor - Bankaltimtara</title>
+    <title>ATM Monitor - Bankaltimtara iOS 26</title>
     <style>
         :root {
             --ios-bg: #003366; 
@@ -78,7 +78,7 @@
 <body>
 
 <div class="glass-card">
-    <div id="notif-banner" class="banner-notif">⚠️ PERHATIAN: ADA SELISIH BELUM SELESAI</div>
+    <div id="notif-banner" class="banner-notif">⚠️ PERHATIAN: ADA SELISIH BARU</div>
 
     <div id="menu">
         <h2>Bankaltimtara 🏦</h2>
@@ -106,8 +106,12 @@
 </div>
 
 <script>
-    const SSID = "1rFuTdUTSuUeQQAZDB7QPngRvDwkTh34ZtrUxYo9Zu7U";
+    // URL Publish to Web Baru Anda
+    const PUB_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRb6GSybyMkKf6JkokVF42Q-nIca3R6yuEGkbSwcgfF8qZbp8J293LHtXGKGB7VVA/pub?output=csv";
+    
+    // URL Web App untuk Update Status (PASTIKAN SUDAH SESUAI DENGAN APPS SCRIPT ANDA)
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzYIPo4ew3ggxHruF0kg9H0XX9nkrSnFqdDzCY_DMTCk4xdFT6VVWqslh3QtAtf2z8HKg/exec";
+    
     let sheetSekarang = "";
 
     window.onload = cekSelisihGlobal;
@@ -118,7 +122,8 @@
 
         for (let u of units) {
             try {
-                const res = await fetch(`https://docs.google.com/spreadsheets/d/${SSID}/gviz/tq?tqx=out:csv&gid=${u.g}&t=${Date.now()}`);
+                // Mengambil data spesifik GID dari link Publish to Web
+                const res = await fetch(`${PUB_URL}&gid=${u.g}&t=${Date.now()}`);
                 const text = await res.text();
                 const lines = text.split('\n').slice(1);
                 
@@ -128,7 +133,6 @@
                     if (col.length >= 4) {
                         const selVal = col[2].replace(/"/g, "").trim();
                         const ketVal = col[3].replace(/"/g, "").toUpperCase().trim();
-                        // KRITERIA NOTIF: Ada nominal selisih DAN keterangan BUKAN "DONE"
                         if (selVal !== "-" && selVal !== "0" && selVal !== "" && ketVal !== "DONE") {
                             unitHasUnresolved = true;
                         }
@@ -150,10 +154,10 @@
         document.getElementById('detail').style.display = 'block';
         document.getElementById('unit-nama').innerText = "Unit: " + nama;
         const tb = document.getElementById('isi-tabel');
-        tb.innerHTML = "<tr><td colspan='3' style='padding:30px; opacity:0.6;'>Memuat data dari Sheets...</td></tr>";
+        tb.innerHTML = "<tr><td colspan='3' style='padding:30px; opacity:0.6;'>📡 Menghubungkan ke Satellite...</td></tr>";
 
         try {
-            const res = await fetch(`https://docs.google.com/spreadsheets/d/${SSID}/gviz/tq?tqx=out:csv&gid=${gid}&t=${Date.now()}`);
+            const res = await fetch(`${PUB_URL}&gid=${gid}&t=${Date.now()}`);
             const text = await res.text();
             const lines = text.split('\n').slice(1);
             tb.innerHTML = "";
@@ -169,7 +173,7 @@
                     
                     tb.innerHTML += `
                         <tr class="${isProblem ? 'warning problem-row' : 'safe-row'}">
-                            <td>${tgl}</td>
+                            <td style="font-size:11px;">${tgl}</td>
                             <td class="${isNoSelisih ? 'no-selisih' : 'ada-selisih'}">${isNoSelisih ? 'Aman' : 'Rp '+sel}</td>
                             <td>
                                 <div style="display:flex; align-items:center; gap:5px; justify-content:center;">
@@ -184,12 +188,12 @@
                         </tr>`;
                 }
             });
-        } catch (e) { tb.innerHTML = "<tr><td colspan='3'>Error memuat data</td></tr>"; }
+        } catch (e) { tb.innerHTML = "<tr><td colspan='3'>Error: Koneksi Terputus</td></tr>"; }
     }
 
     async function simpanKeSheet(tgl) {
         const val = document.getElementById(`sel-${tgl}`).value;
-        if(!val) return alert("Pilih status dulu!");
+        if(!val) return alert("Pilih status!");
         const btn = event.target;
         btn.innerText = "..."; 
         
@@ -197,10 +201,10 @@
 
         try {
             await fetch(url, { method: 'POST', mode: 'no-cors' });
-            alert("Status berhasil diperbarui!");
+            alert("Status berhasil diperbarui di Cloud!");
             btn.innerText = "Ok";
-            if(val === "DONE") location.reload(); // Refresh untuk update notifikasi
-        } catch (e) { alert("Gagal menyimpan!"); btn.innerText = "Ok"; }
+            if(val === "DONE") location.reload(); 
+        } catch (e) { alert("Gagal Sinkron!"); btn.innerText = "Ok"; }
     }
 
     function jalankanFilter() {
