@@ -9,37 +9,50 @@
         body { min-height: 100vh; display: flex; justify-content: center; align-items: center; background: #004e92; color: white; padding: 15px; }
         .glass-card { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px); padding: 20px; border-radius: 25px; border: 1px solid white; width: 100%; max-width: 600px; }
         
-        .filter-area { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
-        .table-area { background: white; color: black; border-radius: 15px; overflow-x: auto; margin-top: 10px; }
-        table { width: 100%; border-collapse: collapse; font-size: 11px; }
-        th { background: #facc15; color: #004e92; padding: 10px; text-align: left; }
-        td { padding: 10px; border-bottom: 1px solid #eee; }
+        .filter-area { background: rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .table-area { background: white; color: black; border-radius: 15px; overflow-x: auto; margin-top: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 450px; }
+        th { background: #facc15; color: #004e92; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #eee; }
         
         .warning { background: #ffebee !important; }
         .no-selisih { color: #2e7d32; font-weight: bold; }
         .ada-selisih { color: #d32f2f; font-weight: bold; }
         .row-hidden { display: none !important; }
 
-        select { padding: 4px; border-radius: 4px; font-size: 10px; }
-        .btn-save { background: #004e92; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-menu { width: 100%; margin-top: 10px; padding: 12px; background: white; color: #004e92; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        select { padding: 6px; border-radius: 6px; font-size: 11px; border: 1px solid #ccc; outline: none; }
+        .btn-save { background: #004e92; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-save:active { transform: scale(0.9); }
+        .btn-menu { width: 100%; margin-top: 10px; padding: 14px; background: white; color: #004e92; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-menu:hover { background: #facc15; }
+
+        /* Gaya Toggle Switch */
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #facc15; }
+        input:checked + .slider:before { transform: translateX(20px); }
     </style>
 </head>
 <body>
 
 <div class="glass-card">
     <div id="menu">
-        <h2 style="text-align:center; color:#facc15; margin-bottom:15px;">Dashboard ATM</h2>
+        <h2 style="text-align:center; color:#facc15; margin-bottom:20px;">ATM Monitor 🏦</h2>
         <button class="btn-menu" onclick="muatData('Gersik', '0')">UNIT GERSIK</button>
         <button class="btn-menu" onclick="muatData('Maridan', '1565950302')">UNIT MARIDAN</button>
     </div>
 
     <div id="detail" style="display:none;">
-        <h3 id="unit-nama" style="color:#facc15; text-align:center; margin-bottom:10px;"></h3>
+        <h3 id="unit-nama" style="color:#facc15; text-align:center; margin-bottom:15px;"></h3>
         
         <div class="filter-area">
-            <span>⚠️ Hanya Selisih & Belum Done</span>
-            <input type="checkbox" id="toggleFilter" onchange="jalankanFilter()">
+            <span style="font-size: 12px; font-weight: bold;">⚠️ Tampilkan Selisih Saja</span>
+            <label class="switch">
+                <input type="checkbox" id="toggleFilter" onchange="jalankanFilter()">
+                <span class="slider"></span>
+            </label>
         </div>
 
         <div class="table-area">
@@ -48,13 +61,13 @@
                 <tbody id="isi-tabel"></tbody>
             </table>
         </div>
-        <button class="btn-menu" onclick="location.reload()">KEMBALI</button>
+        <button class="btn-menu" onclick="location.reload()">KEMBALI KE MENU</button>
     </div>
 </div>
 
 <script>
     const SSID = "1rFuTdUTSuUeQQAZDB7QPngRvDwkTh34ZtrUxYo9Zu7U";
-    // MASUKKAN URL YANG KAMU DAPAT SETELAH KLIK "TERAPKAN" DI SINI
+    // GANTI LINK DI BAWAH INI DENGAN URL WEB APP ANDA
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw0XNO14T6ZtEO5td5ylJSs3gEQdFY4zdmHfCwO728PxUf5OLaDp5EJ5yN4GShIBia7Hw/exec";
     let sheetSekarang = "";
 
@@ -64,7 +77,7 @@
         document.getElementById('detail').style.display = 'block';
         document.getElementById('unit-nama').innerText = "Unit: " + nama;
         const tb = document.getElementById('isi-tabel');
-        tb.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Memuat data...</td></tr>";
+        tb.innerHTML = "<tr><td colspan='3' style='text-align:center; padding:20px;'>Memuat data dari Sheets...</td></tr>";
 
         try {
             const res = await fetch(`https://docs.google.com/spreadsheets/d/${SSID}/gviz/tq?tqx=out:csv&gid=${gid}&t=${Date.now()}`);
@@ -88,7 +101,7 @@
                             <td class="${isNoSelisih ? 'no-selisih' : 'ada-selisih'}">${isNoSelisih ? 'Tidak Ada Selisih' : 'Rp '+sel}</td>
                             <td>
                                 <select id="sel-${tgl}">
-                                    <option value="" ${ket==""?'selected':''}>-</option>
+                                    <option value="" ${ket==""?'selected':''}>- Pilih -</option>
                                     <option value="DONE" ${ket=="DONE"?'selected':''}>DONE</option>
                                     <option value="PROSES" ${ket=="PROSES"?'selected':''}>PROSES</option>
                                 </select>
@@ -97,15 +110,17 @@
                         </tr>`;
                 }
             });
-        } catch (e) { tb.innerHTML = "<tr><td colspan='3'>Error Koneksi</td></tr>"; }
+        } catch (e) { tb.innerHTML = "<tr><td colspan='3'>Gagal memuat data. Periksa koneksi.</td></tr>"; }
     }
 
     async function simpanKeSheet(tgl) {
         const val = document.getElementById(`sel-${tgl}`).value;
-        if(!val) return alert("Pilih status!");
+        if(!val) return alert("Pilih status DONE atau PROSES!");
         
         const btn = event.target;
+        const barisAsli = btn.innerText;
         btn.innerText = "...";
+        btn.disabled = true;
         
         const fd = new FormData();
         fd.append('tanggal', tgl);
@@ -113,16 +128,22 @@
         fd.append('sheetName', sheetSekarang);
 
         try {
-            // Kirim data ke Apps Script
             await fetch(WEB_APP_URL, { method: 'POST', body: fd, mode: 'no-cors' });
-            alert("Berhasil disimpan!");
-            btn.innerText = "Ok";
-        } catch (e) { alert("Gagal!"); btn.innerText = "Ok"; }
+            alert("Data berhasil dikirim ke Sheets!");
+            btn.innerText = barisAsli;
+            btn.disabled = false;
+        } catch (e) { 
+            alert("Terjadi kesalahan saat menyimpan."); 
+            btn.innerText = barisAsli;
+            btn.disabled = false;
+        }
     }
 
     function jalankanFilter() {
         const cek = document.getElementById('toggleFilter').checked;
-        document.querySelectorAll('.safe-row').forEach(r => r.style.display = cek ? 'none' : 'table-row');
+        document.querySelectorAll('.safe-row').forEach(r => {
+            r.classList.toggle('row-hidden', cek);
+        });
     }
 </script>
 </body>
