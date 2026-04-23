@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ATM Monitor Supreme V7</title>
+    <title>ATM Monitor Supreme V8</title>
     <style>
         :root {
             --gold: #D4AF37; --gold-light: #F9E79F;
@@ -12,6 +12,7 @@
             --border: rgba(255, 255, 255, 0.1);
             --red: #FF3B30; --green: #34C759;
             --ring-bg: rgba(255, 255, 255, 0.05);
+            --accent: #007AFF;
         }
 
         [data-theme="light"] {
@@ -21,7 +22,7 @@
             --ring-bg: rgba(0, 0, 0, 0.05);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; transition: 0.3s; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; transition: background 0.3s, color 0.3s; }
         body { background: var(--bg); color: var(--text); padding: 20px; display: flex; justify-content: center; min-height: 100vh; }
         
         .app-container { width: 100%; max-width: 410px; position: relative; }
@@ -30,7 +31,7 @@
         .theme-toggle {
             position: absolute; top: 10px; right: 0;
             background: var(--card); border: 1px solid var(--border);
-            padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: bold;
+            padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: bold; z-index: 10;
         }
 
         /* ANALYTICS */
@@ -45,10 +46,10 @@
         svg { transform: rotate(-90deg); width: 75px; height: 75px; }
         circle { fill: none; stroke-width: 7; stroke-linecap: round; }
         .circle-bg { stroke: var(--ring-bg); }
-        .circle-proc { stroke: var(--gold); stroke-dasharray: 251; stroke-dashoffset: 251; }
+        .circle-proc { stroke: var(--gold); stroke-dasharray: 251; stroke-dashoffset: 251; transition: 1.5s cubic-bezier(0.4, 0, 0.2, 1); }
 
         /* FILTER SYSTEM */
-        .filter-bar { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
+        .filter-bar { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
         .filter-chip {
             padding: 8px 16px; border-radius: 20px; background: var(--card);
             font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap;
@@ -57,9 +58,9 @@
         .filter-chip.active { background: var(--gold); color: black; border-color: var(--gold); }
 
         /* CARDS */
-        .card { background: var(--card); border-radius: 25px; padding: 20px; margin-bottom: 12px; border: 1px solid var(--border); }
+        .card { background: var(--card); border-radius: 25px; padding: 20px; margin-bottom: 12px; border: 1px solid var(--border); box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .unit-card { cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .is-problem { border-left: 5px solid var(--red); }
+        .is-problem { border-left: 5px solid var(--red); background: rgba(255, 59, 48, 0.03); }
 
         .action-grid { display: grid; grid-template-columns: 1fr 65px; gap: 10px; margin-top: 15px; }
         select, input { 
@@ -68,13 +69,14 @@
         }
 
         .btn-gold { background: var(--gold); border: none; border-radius: 12px; color: black; font-weight: 800; cursor: pointer; }
+        .btn-gold:active { transform: scale(0.95); }
         
         /* FAB & MODAL */
         .fab {
             position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px;
             background: var(--gold); border-radius: 50%; display: flex; align-items: center;
             justify-content: center; font-size: 30px; color: black; border: none; font-weight: bold;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3); z-index: 100;
+            box-shadow: 0 10px 25px rgba(212,175,55,0.4); z-index: 100; cursor: pointer;
         }
 
         .modal {
@@ -94,7 +96,7 @@
 
     <div id="menu-screen">
         <header style="text-align: center; margin-bottom: 20px;">
-            <h1 style="font-size: 24px; letter-spacing: -1px;">ATM MONITOR</h1>
+            <h1 style="font-size: 24px; letter-spacing: -1px; font-weight: 900;">ATM MONITOR</h1>
             <p style="color: var(--gold); font-size: 9px; font-weight: 800; letter-spacing: 3px;">BANKALTIMTARA</p>
         </header>
 
@@ -104,31 +106,31 @@
                 <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-weight:900;" id="percent-txt">0%</div>
             </div>
             <div>
-                <p style="font-size: 10px; color: var(--subtext);">GLOBAL STATUS</p>
-                <h3 id="summary-txt">Checking...</h3>
+                <p style="font-size: 10px; color: var(--subtext); letter-spacing: 1px;">SISTEM RELIABILITY</p>
+                <h3 id="summary-txt" style="color: var(--gold);">Syncing...</h3>
             </div>
         </div>
 
         <div class="filter-bar">
             <div class="filter-chip active" onclick="filterUnits('all', this)">Semua Unit</div>
-            <div class="filter-chip" onclick="filterUnits('problem', this)">Masalah ⚠️</div>
+            <div class="filter-chip" onclick="filterUnits('problem', this)">Perlu Tindakan ⚠️</div>
         </div>
 
         <div id="unit-list">
-            <div class="card unit-card" onclick="openUnit('Gersik', '0')">
-                <div><h3>Unit Gersik</h3><p id="sub-Gersik" style="font-size:12px; opacity:0.6;">Loading...</p></div>
+            <div class="card unit-card" data-status="loading" onclick="openUnit('Gersik', '0')">
+                <div><h3>Unit Gersik</h3><p id="sub-Gersik" style="font-size:12px; opacity:0.6;">Menghubungkan...</p></div>
                 <div id="badge-Gersik">􀆊</div>
             </div>
-            <div class="card unit-card" onclick="openUnit('Maridan', '1565950302')">
-                <div><h3>Unit Maridan</h3><p id="sub-Maridan" style="font-size:12px; opacity:0.6;">Loading...</p></div>
+            <div class="card unit-card" data-status="loading" onclick="openUnit('Maridan', '1565950302')">
+                <div><h3>Unit Maridan</h3><p id="sub-Maridan" style="font-size:12px; opacity:0.6;">Menghubungkan...</p></div>
                 <div id="badge-Maridan">􀆊</div>
             </div>
         </div>
     </div>
 
     <div id="detail-screen" class="hidden">
-        <button onclick="location.reload()" style="background:none; border:none; color:var(--gold); font-weight:800; cursor:pointer; margin-bottom:15px;">← KEMBALI</button>
-        <h2 id="title-detail" style="margin-bottom:20px;">Unit</h2>
+        <button onclick="location.reload()" style="background:none; border:none; color:var(--accent); font-weight:800; cursor:pointer; margin-bottom:15px; font-size: 14px;">← KEMBALI</button>
+        <h2 id="title-detail" style="margin-bottom:20px; font-size: 26px; font-weight: 900;">Unit</h2>
 
         <div class="filter-bar">
             <div class="filter-chip active" onclick="filterItems('all', this)">Semua Tanggal</div>
@@ -142,31 +144,42 @@
 
 <div id="modalAdd" class="modal">
     <div class="modal-content">
-        <h3 style="margin-bottom:15px; color:var(--gold);">Input Data Baru</h3>
-        <input type="text" id="in-tgl" placeholder="Tanggal (Contoh: 23/04)">
-        <input type="number" id="in-selisih" placeholder="Jumlah Selisih (Isi 0 jika OK)" style="margin: 10px 0;">
-        <select id="in-status">
-            <option value="PROSES">PROSES</option>
-            <option value="DONE">DONE</option>
+        <h3 style="margin-bottom:20px; color:var(--gold); text-align: center;">Input Data Baru</h3>
+        
+        <label style="font-size: 11px; color: var(--subtext); margin-left: 5px;">PILIH TANGGAL</label>
+        <input type="date" id="in-tgl" style="margin-top: 5px; margin-bottom: 15px;">
+        
+        <label style="font-size: 11px; color: var(--subtext); margin-left: 5px;">JUMLAH SELISIH (Rp)</label>
+        <input type="number" id="in-selisih" placeholder="Isi 0 jika nominal sesuai" style="margin-top: 5px; margin-bottom: 15px;">
+        
+        <label style="font-size: 11px; color: var(--subtext); margin-left: 5px;">STATUS AWAL</label>
+        <select id="in-status" style="margin-top: 5px;">
+            <option value="PROSES">🔴 PROSES</option>
+            <option value="DONE">🟢 DONE</option>
         </select>
-        <button class="btn-gold" style="width:100%; padding:15px; margin-top:20px;" onclick="prosesTambah()">SIMPAN</button>
-        <button onclick="hideModal()" style="background:none; border:none; color:var(--subtext); width:100%; margin-top:15px;">Batal</button>
+
+        <button class="btn-gold" id="btn-simpan" style="width:100%; padding:15px; margin-top:25px;" onclick="prosesTambah()">SIMPAN DATA</button>
+        <button onclick="hideModal()" style="background:none; border:none; color:var(--subtext); width:100%; margin-top:15px; font-size: 13px;">Batalkan</button>
     </div>
 </div>
 
 <script>
     const SSID = "1rFuTdUTSuUeQQAZDB7QPngRvDwkTh34ZtrUxYo9Zu7U";
-    const WEB_URL = "https://script.google.com/macros/s/AKfycbxzvuHG0P2S40FGOkEAZ1tyXY9h1J7qPYB7Fi-QxW8AL4m9pltJ7sSplEf5FGb1JvUV_w/exec";
+    const WEB_URL = "https://script.google.com/macros/s/AKfycbzYIPo4ew3ggxHruF0kg9H0XX9nkrSnFqdDzCY_DMTCk4xdFT6VVWqslh3QtAtf2z8HKg/exec";
 
     let curUnit = "", curGid = "", gTotal = 0, gSafe = 0;
 
-    window.onload = () => { checkUnit('Gersik', '0'); checkUnit('Maridan', '1565950302'); };
+    window.onload = () => { 
+        checkUnit('Gersik', '0'); 
+        checkUnit('Maridan', '1565950302'); 
+    };
 
     function toggleTheme() {
         const b = document.body;
+        const icon = document.querySelector('.theme-toggle');
         const isDark = b.getAttribute('data-theme') === 'dark';
         b.setAttribute('data-theme', isDark ? 'light' : 'dark');
-        document.querySelector('.theme-toggle').innerHTML = isDark ? '☀️ Light' : '🌙 Dark';
+        icon.innerHTML = isDark ? '☀️ Light' : '🌙 Dark';
     }
 
     async function checkUnit(nama, gid) {
@@ -178,11 +191,24 @@
             const c = r.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
             const sel = (c[2]||"").replace(/"/g,"").trim();
             const ket = (c[3]||"").replace(/"/g,"").toUpperCase().trim();
-            gTotal++; if(sel !== "" && sel !== "0" && sel !== "-" && ket !== "DONE") iss++; else gSafe++;
+            gTotal++; 
+            if(sel !== "" && sel !== "0" && sel !== "-" && ket !== "DONE") iss++; else gSafe++;
         });
+        const card = document.querySelector(`[onclick="openUnit('${nama}', '${gid}')"]`);
         const sub = document.getElementById('sub-'+nama);
-        sub.innerText = iss > 0 ? iss + " Perlu Tindakan" : "Operasional Normal";
-        sub.style.color = iss > 0 ? "var(--red)" : "var(--green)";
+        const badge = document.getElementById('badge-'+nama);
+        
+        if(iss > 0) {
+            sub.innerText = iss + " Masalah ditemukan";
+            sub.style.color = "var(--red)";
+            badge.innerHTML = "⚠️";
+            card.setAttribute('data-status', 'problem');
+        } else {
+            sub.innerText = "Operasional Normal";
+            sub.style.color = "var(--green)";
+            badge.innerHTML = "✅";
+            card.setAttribute('data-status', 'clear');
+        }
         updateRing();
     }
 
@@ -190,16 +216,16 @@
         const p = Math.round((gSafe/gTotal)*100) || 0;
         document.getElementById('progress-ring').style.strokeDashoffset = 251 - (251*p/100);
         document.getElementById('percent-txt').innerText = p + "%";
-        document.getElementById('summary-txt').innerText = p >= 90 ? "Excellent" : "Needs Action";
+        document.getElementById('summary-txt').innerText = p >= 90 ? "Excellent" : "Need Action";
     }
 
     async function openUnit(nama, gid) {
         curUnit = nama; curGid = gid;
         document.getElementById('menu-screen').classList.add('hidden');
         document.getElementById('detail-screen').classList.remove('hidden');
-        document.getElementById('title-detail').innerText = nama;
+        document.getElementById('title-detail').innerText = "Unit " + nama;
         const container = document.getElementById('items-container');
-        container.innerHTML = "Syncing...";
+        container.innerHTML = "<p style='text-align:center; opacity:0.3; padding:40px;'>Membuka Ledger...</p>";
 
         const res = await fetch(`https://docs.google.com/spreadsheets/d/${SSID}/gviz/tq?tqx=out:csv&gid=${gid}&t=${Date.now()}`);
         const csv = await res.text();
@@ -215,24 +241,36 @@
             const div = document.createElement('div');
             div.className = `card item-row ${isProblem ? 'is-problem' : ''}`;
             div.innerHTML = `
-                <div style="display:flex; justify-content:space-between;">
-                    <b>${tgl}</b>
-                    <span style="font-weight:900; color:${isProblem ? 'var(--red)' : 'var(--green)'}">
-                        ${isProblem ? 'Rp '+sel : (ket==='DONE'?'✓ DONE':'✓ AMAN')}
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight:800; font-size:15px;">${tgl}</span>
+                    <span style="font-weight:900; font-size:13px; color:${isProblem ? 'var(--red)' : 'var(--green)'}">
+                        ${isProblem ? 'DIFF: Rp '+sel : (ket==='DONE'?'✓ SELESAI':'✓ AMAN')}
                     </span>
                 </div>
                 <div class="action-grid">
-                    <select id="sel-${tgl}"><option value="DONE" ${ket==='DONE'?'selected':''}>DONE</option><option value="PROSES" ${ket==='PROSES'?'selected':''}>PROSES</option></select>
-                    <button class="btn-gold" onclick="save('${tgl}','${nama}',this)">OK</button>
+                    <select id="sel-${tgl}">
+                        <option value="DONE" ${ket==='DONE'?'selected':''}>DONE</option>
+                        <option value="PROSES" ${ket==='PROSES'?'selected':''}>PROSES</option>
+                    </select>
+                    <button class="btn-gold" onclick="save('${tgl}','${nama}',this)">Ok</button>
                 </div>
             `;
             container.appendChild(div);
         });
     }
 
-    // FILTER TETAP ADA
+    function filterUnits(type, el) {
+        document.querySelectorAll('#menu-screen .filter-chip').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        document.querySelectorAll('.unit-card').forEach(card => {
+            if(type === 'all') card.classList.remove('hidden');
+            else if(card.getAttribute('data-status') === type) card.classList.remove('hidden');
+            else card.classList.add('hidden');
+        });
+    }
+
     function filterItems(type, el) {
-        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('#detail-screen .filter-chip').forEach(c => c.classList.remove('active'));
         el.classList.add('active');
         document.querySelectorAll('.item-row').forEach(row => {
             if(type === 'all') row.classList.remove('hidden');
@@ -245,10 +283,30 @@
     function hideModal() { document.getElementById('modalAdd').style.display = 'none'; }
 
     async function prosesTambah() {
-        const tgl = document.getElementById('in-tgl').value, sel = document.getElementById('in-selisih').value, stat = document.getElementById('in-status').value;
-        if(!tgl) return alert("Isi tanggal!");
-        await fetch(`${WEB_URL}?action=tambah&tanggal=${tgl}&selisih=${sel}&status=${stat}&sheetName=${curUnit}`, {mode:'no-cors'});
-        hideModal(); openUnit(curUnit, curGid);
+        const rawDate = document.getElementById('in-tgl').value;
+        const sel = document.getElementById('in-selisih').value;
+        const stat = document.getElementById('in-status').value;
+        const btn = document.getElementById('btn-simpan');
+
+        if(!rawDate) return alert("Pilih tanggal!");
+
+        // Format Date ke DD/MM/YYYY
+        const d = new Date(rawDate);
+        const formattedDate = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+
+        btn.innerText = "Processing...";
+        btn.disabled = true;
+
+        await fetch(`${WEB_URL}?action=tambah&tanggal=${encodeURIComponent(formattedDate)}&selisih=${sel}&status=${stat}&sheetName=${curUnit}`, {mode:'no-cors'});
+        
+        hideModal();
+        btn.innerText = "SIMPAN DATA";
+        btn.disabled = false;
+        // Reset inputs
+        document.getElementById('in-tgl').value = "";
+        document.getElementById('in-selisih').value = "";
+        
+        openUnit(curUnit, curGid);
     }
 
     async function save(tgl, unit, btn) {
