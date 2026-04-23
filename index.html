@@ -7,7 +7,6 @@
     <style>
         :root {
             --ios-blue: #007AFF;
-            --ios-gold: #FACC15;
             --glass: rgba(255, 255, 255, 0.08);
             --glass-thick: rgba(255, 255, 255, 0.15);
             --danger: #FF453A;
@@ -41,7 +40,6 @@
             box-shadow: 0 50px 100px rgba(0, 0, 0, 0.8);
         }
 
-        /* Banner Notif */
         .banner-notif {
             background: var(--danger);
             color: white; padding: 12px; border-radius: 22px;
@@ -60,10 +58,7 @@
             background: var(--glass-thick); color: white; border: 1px solid rgba(255,255,255,0.1);
             border-radius: 28px; font-weight: 600; font-size: 19px; cursor: pointer;
             display: flex; justify-content: space-between; align-items: center;
-            transition: all 0.3s ease;
         }
-
-        .btn-menu:active { transform: scale(0.95); }
 
         .notif-badge {
             background: var(--danger); color: white; width: 24px; height: 24px;
@@ -75,7 +70,25 @@
 
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
-        /* List Items */
+        /* Toggle Filter Area */
+        .filter-area {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255,255,255,0.05); padding: 12px 20px;
+            border-radius: 20px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .ios-switch {
+            position: relative; width: 50px; height: 26px;
+            appearance: none; background: #39393d; border-radius: 15px;
+            cursor: pointer; transition: 0.3s;
+        }
+        .ios-switch::before {
+            content: ""; position: absolute; width: 22px; height: 22px;
+            background: white; border-radius: 50%; top: 2px; left: 2px; transition: 0.3s;
+        }
+        .ios-switch:checked { background: var(--success); }
+        .ios-switch:checked::before { left: 26px; }
+
         .row-item {
             background: rgba(255, 255, 255, 0.04);
             margin-bottom: 12px; padding: 20px; border-radius: 25px;
@@ -85,14 +98,12 @@
 
         .row-header { display: flex; justify-content: space-between; align-items: center; }
         .row-date { font-weight: 700; font-size: 16px; }
-        
         .status-pill { padding: 5px 12px; border-radius: 12px; font-weight: 800; font-size: 13px; }
 
         .action-area { display: flex; gap: 10px; }
-        
         select { 
             flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1);
-            padding: 12px; border-radius: 15px; color: white; font-weight: 600; outline: none;
+            padding: 12px; border-radius: 15px; color: white; font-weight: 600;
         }
 
         .btn-save { 
@@ -107,34 +118,37 @@
         }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
 <div class="glass-card">
-    <div id="notif-banner" class="banner-notif">⚠️ ADA SELISIH YANG PERLU DIPROSES</div>
+    <div id="notif-banner" class="banner-notif">⚠️ ADA SELISIH PERLU TINDAKAN</div>
 
     <div id="screen-menu">
         <h2>ATM Monitor</h2>
         <p class="subtitle">Bankaltimtara Pro</p>
-        
         <button class="btn-menu" onclick="muatData('Gersik', '0')">
-            <span>Unit Gersik</span> 
-            <div id="badge-Gersik">􀆊</div>
+            <span>Unit Gersik</span> <div id="badge-Gersik">􀆊</div>
         </button>
-        
         <button class="btn-menu" onclick="muatData('Maridan', '1565950302')">
-            <span>Unit Maridan</span> 
-            <div id="badge-Maridan">􀆊</div>
+            <span>Unit Maridan</span> <div id="badge-Maridan">􀆊</div>
         </button>
     </div>
 
     <div id="screen-detail" style="display:none;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <button onclick="location.reload()" style="background:none; border:none; color:var(--ios-blue); font-size: 17px; cursor:pointer; font-weight:600;">Kembali</button>
             <h3 id="unit-title" style="font-size: 18px;"></h3>
             <div style="width: 50px;"></div>
         </div>
+
+        <div class="filter-area">
+            <span style="font-size: 13px; font-weight: 600; opacity: 0.8;">Hanya Tampilkan Selisih</span>
+            <input type="checkbox" class="ios-switch" id="toggleSelisih" onchange="jalankanFilter()">
+        </div>
+
         <div id="data-list"></div>
     </div>
 </div>
@@ -145,40 +159,29 @@
 
     window.onload = cekGlobal;
 
-    // FUNGSI CEK NOTIFIKASI
     async function cekGlobal() {
         const units = [{ n: 'Gersik', g: '0' }, { n: 'Maridan', g: '1565950302' }];
-        let bannerMuncul = false;
-
+        let globalAlert = false;
         for (let u of units) {
             try {
                 const res = await fetch(`https://docs.google.com/spreadsheets/d/${SSID}/gviz/tq?tqx=out:csv&gid=${u.g}&t=${Date.now()}`);
                 const csv = await res.text();
                 const lines = csv.split('\n').slice(1);
-                
-                // Logika: Selisih ada (bukan 0/-) DAN keterangan bukan "DONE"
                 let adaMasalah = lines.some(l => {
                     const c = l.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                    const selVal = (c[2] || "").replace(/"/g, "").trim();
-                    const ketVal = (c[3] || "").replace(/"/g, "").toUpperCase().trim();
-                    
-                    const punyaSelisih = (selVal !== "" && selVal !== "0" && selVal !== "-");
-                    const belumDone = (ketVal !== "DONE");
-                    
-                    return (punyaSelisih && belumDone);
+                    const sel = (c[2] || "").replace(/"/g, "").trim();
+                    const ket = (c[3] || "").replace(/"/g, "").toUpperCase().trim();
+                    return (sel !== "" && sel !== "0" && sel !== "-" && ket !== "DONE");
                 });
-
                 if (adaMasalah) {
-                    bannerMuncul = true;
+                    globalAlert = true;
                     document.getElementById('badge-' + u.n).innerHTML = `<div class="notif-badge">!</div>`;
                 } else {
                     document.getElementById('badge-' + u.n).innerHTML = `􀆊`;
                 }
             } catch (e) {}
         }
-        
-        // Tampilkan banner hanya jika ada minimal 1 unit bermasalah
-        document.getElementById('notif-banner').style.display = bannerMuncul ? 'block' : 'none';
+        document.getElementById('notif-banner').style.display = globalAlert ? 'block' : 'none';
     }
 
     async function muatData(nama, gid) {
@@ -200,23 +203,25 @@
 
                 const tgl = c[1], sel = c[2], ket = (c[3] || "").toUpperCase();
                 const isAman = (sel === "" || sel === "0" || sel === "-");
-                const isProblem = (!isAman && ket !== "DONE");
+                const isDone = (ket === "DONE");
+                const isProblem = (!isAman && !isDone);
 
                 const item = document.createElement('div');
-                item.className = 'row-item';
+                // Penanda kategori baris untuk filter
+                item.className = `row-item ${isProblem ? 'row-problem' : 'row-cleared'}`;
                 if(isProblem) item.style.borderLeft = "4px solid var(--danger)";
 
                 item.innerHTML = `
                     <div class="row-header">
                         <span class="row-date">${tgl}</span>
-                        <span class="status-pill" style="background: ${isAman || ket === 'DONE' ? 'rgba(50,215,75,0.1)' : 'rgba(255,69,58,0.1)'}; color: ${isAman || ket === 'DONE' ? 'var(--success)' : 'var(--danger)'}">
-                            ${isAman ? '✓ AMAN' : (ket === 'DONE' ? '✓ SELESAI' : 'Rp ' + sel)}
+                        <span class="status-pill" style="background: ${isAman || isDone ? 'rgba(50,215,75,0.1)' : 'rgba(255,69,58,0.1)'}; color: ${isAman || isDone ? 'var(--success)' : 'var(--danger)'}">
+                            ${isAman ? '✓ AMAN' : (isDone ? '✓ SELESAI' : 'Rp ' + sel)}
                         </span>
                     </div>
                     <div class="action-area">
                         <select id="sel-${tgl}">
                             <option value="" ${ket==""?'selected':''}>- Status -</option>
-                            <option value="DONE" ${ket=="DONE"?'selected':''}>DONE</option>
+                            <option value="DONE" ${isDone?'selected':''}>DONE</option>
                             <option value="PROSES" ${ket=="PROSES"?'selected':''}>PROSES</option>
                         </select>
                         <button class="btn-save" onclick="simpanData('${tgl}', '${nama}', this)">Ok</button>
@@ -224,30 +229,39 @@
                 `;
                 list.appendChild(item);
             });
+            // Jalankan filter otomatis setelah data dimuat (jika toggle aktif)
+            jalankanFilter();
         } catch (e) { list.innerHTML = "Gagal memuat."; }
+    }
+
+    function jalankanFilter() {
+        const isFilterActive = document.getElementById('toggleSelisih').checked;
+        const barisAman = document.querySelectorAll('.row-cleared');
+        
+        barisAman.forEach(el => {
+            if (isFilterActive) {
+                el.classList.add('hidden');
+            } else {
+                el.classList.remove('hidden');
+            }
+        });
     }
 
     async function simpanData(tgl, unit, btn) {
         const val = document.getElementById(`sel-${tgl}`).value;
         if(!val) return;
-        
         btn.innerText = "...";
         btn.disabled = true;
-
         const url = `${WEB_APP_URL}?tanggal=${encodeURIComponent(tgl)}&status=${encodeURIComponent(val)}&sheetName=${encodeURIComponent(unit)}`;
-
         try {
             await fetch(url, { method: 'POST', mode: 'no-cors' });
             btn.innerText = "✓";
             btn.style.background = "var(--success)";
-            
-            // Re-check status global setelah simpan agar notif banner hilang jika semua sudah DONE
             setTimeout(() => {
-                cekGlobal(); 
-                btn.innerText = "Ok";
-                btn.style.background = "var(--ios-blue)";
-                btn.disabled = false;
-            }, 1000);
+                // Refresh data setelah simpan supaya filter langsung bekerja
+                muatData(unit.includes('Gersik') ? 'Gersik' : 'Maridan', unit.includes('Gersik') ? '0' : '1565950302');
+                cekGlobal();
+            }, 800);
         } catch (e) {
             btn.innerText = "Ok";
             btn.disabled = false;
